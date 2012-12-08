@@ -6,7 +6,8 @@
   "dependencies": {
     "commander": "latest",
     "repeat": "latest",
-    "growl": "latest"
+    "growl": "latest",
+    "async": "latest"
   },
   "bin": {
     "git-upstream-watch": "./bin/git-upstream-watch"
