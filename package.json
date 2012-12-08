@@ -1,6 +1,6 @@
 {
   "name": "git-upstream-watch",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Get notified when one or more local git repos diverge from the upstream tracking branch",
   "main": "checker.js",
   "dependencies": {
