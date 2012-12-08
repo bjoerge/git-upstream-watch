@@ -1,0 +1,20 @@
+{
+  "name": "git-upstream-watch",
+  "version": "0.0.1",
+  "description": "Get notified when one or more local git repos diverge from the upstream tracking branch",
+  "main": "checker.js",
+  "dependencies": {
+    "commander": "latest",
+    "repeat": "latest",
+    "growl": "latest"
+  },
+  "bin": {
+    "git-upstream-watch": "./bin/git-upstream-watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bjoerge/git-upstream-watch"
+  },
+  "author": "Bjørge Næss",
+  "license": "MIT"
+}
