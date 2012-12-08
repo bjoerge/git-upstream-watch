@@ -59,7 +59,7 @@ UpstreamChecker.prototype.check = function(cb) {
         var data = stdout ? {branch: local, remote: remote, commits: parseLogLines(stdout) } : null;
         // todo: check stderr and emit "error" / cb(err, null)
         if (data) {
-          console.log("\t! \033Divergence of "+data.commits.length+" commits between "+local+" and "+remote+"\033[0m");
+          console.log("\t! \033[34mDivergence of "+data.commits.length+" commit(s) between "+local+" and "+remote+"\033[0m");
           _this.emit("divergence", data);
         }
         else {

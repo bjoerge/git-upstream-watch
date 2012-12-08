@@ -15,7 +15,7 @@ program
     .option('-w, --watch', 'Keep checking upstream branch at regular intervals')
     .option('-n, --notifyinterval [interval]', "Don't notify about each repo more often than every n seconds", 60*20)
     .option('-i, --interval [interval]', 'Recheck for changes in upstream branch every n seconds', 120)
-    .option('-c, --command [command]', 'Command to execute in repo dir when divergence is found. I.e. "git pull"')
+    .option('-c, --cmd [cmd]', 'Command to execute in repo dir when divergence is found. I.e. "git pull"')
     .parse(process.argv);
 
 var checkers = [];
@@ -60,11 +60,11 @@ function createCheckers() {
         if (!prev.time || (now - prev.time)/1000 > program.notifyinterval || prev.hash != latest.hash || program.always) {
           var body = "Branches has diverged with "+data.commits.length+" commits. Latest was " + latest.timeSince + ' by ' + latest.author + ": " + latest.subject;
           growl(body, {title: name + " out of sync with "+data.remote, image: notificationImage});
-          if (program.command) {
+          if (program.cmd) {
             var exec = require('child_process').exec;
             exec(program.command, {cwd: realpath}, function(err, stdout, stderr) {
               console.log();
-              console.log("Result of executing "+program.command+" in "+realpath+": ");
+              console.log("Result of executing "+program.cmd+" in "+realpath+": ");
               console.log("\033[32m"+stdout+"\033[31m"+stderr+"\033[0m");
             });
           }

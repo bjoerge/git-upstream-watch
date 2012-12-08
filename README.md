@@ -21,7 +21,7 @@ $ npm install git-upstream-watch -g
     -w, --watch                      Keep checking upstream branch at regular intervals
     -n, --notifyinterval [interval]  Don't notify about each repo more often than every n seconds
     -i, --interval [interval]        Recheck for changes in upstream branch every n seconds
-    -c, --command [command]          Command to execute in repo dir when divergence is found. I.e. "git pull"
+    -c, --cmd [command]              Command to execute in repo dir when divergence is found. I.e. "git pull"
 ```
 
 Instead of listing each repodir, wildcard paths/glob strings are supported.
@@ -43,7 +43,7 @@ $ git-upstream-watch ~/projects --always --watch --interval 1800
 ### Execute git pull in repo dir when divergence is detected
 
 ```sh
-$ git-upstream-watch ~/projects --command "git pull"
+$ git-upstream-watch ~/projects --cmd "git pull"
 ```
 
 # Usage (as a library)
