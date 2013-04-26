@@ -64,6 +64,7 @@ UpstreamChecker.prototype.check = function(cb) {
         }
         else {
           console.log("\t✓ \033[32mLocal branch "+local+" is up to date with upstream branch "+remote+"\033[0m");
+          _this.emit("inSync", data);
         }
         if (cb) cb(null, data);
       });
