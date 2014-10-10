@@ -15,8 +15,13 @@ program
     .option('-w, --watch', 'Keep checking upstream branch at regular intervals')
     .option('-n, --notifyinterval [interval]', "Don't notify about each repo more often than every n seconds", 60*20)
     .option('-i, --interval [interval]', 'Recheck for changes in upstream branch every n seconds', 120)
+    .option('-s, --silent', 'Never log anything', true)
     .option('-c, --cmd [cmd]', 'Command to execute in repo dir when divergence is found. I.e. "git pull"')
     .parse(process.argv);
+
+var log = program.silent !== true ? function noop() {} : function log() {
+  console.log.apply(console, arguments);
+};
 
 /**
  * Recursively find directories where the iterator function returns true
@@ -50,6 +55,23 @@ function createCheckers() {
     var checker = new RemoteChecker(realpath);
 
     var name = path.basename(realpath);
+
+    checker.on("fetch", function (data) {
+      log("\t· Fetching origin in "+data.path+", please hang on...");
+    });
+
+    checker.on("check", function (data) {
+      log("\t· Checking local "+data.branch+" against "+data.remote+" in "+data.path);
+    });
+
+    checker.on("inSync", function (data) {
+      log("\t✓ \033[32mLocal branch "+data.branch+" is up to date with upstream branch "+data.remote+"\033[0m");
+    });
+
+    checker.on("divergence", function (data) {
+      log("\t! \033[33mLocal branch "+data.branch+" is out of sync with upstream branch "+data.remote+"\033[0m");
+    });
+
     checker.on("divergence", (function () {
       var prev = {};
       return function (data) {
@@ -61,9 +83,9 @@ function createCheckers() {
           if (program.cmd) {
             var exec = require('child_process').exec;
             exec(program.command, {cwd: realpath}, function(err, stdout, stderr) {
-              console.log();
-              console.log("Result of executing "+program.cmd+" in "+realpath+": ");
-              console.log("\033[32m"+stdout+"\033[31m"+stderr+"\033[0m");
+              log();
+              log("Result of executing "+program.cmd+" in "+realpath+": ");
+              log("\033[33m"+stdout+"\033[31m"+stderr+"\033[0m");
             });
           }
           prev.time = now;
@@ -82,9 +104,9 @@ var checkAll = function (done) {
   async.forEachSeries(checkers, function (checker, cb) {
     checker.check(cb);
   }, function () {
-    console.log();
-    console.log("\033[33mResting for " + program.interval + " seconds...\033[0m");
-    console.log();
+    log();
+    log("\033[32mResting for " + program.interval + " seconds...\033[0m");
+    log();
     done();
   });
 };
@@ -95,7 +117,7 @@ if (program.watch) {
 }
 else {
   checkAll(function () {
-    console.log("Goodbye");
+    log("Goodbye");
     process.exit();
   })
 }

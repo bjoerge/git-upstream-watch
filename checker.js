@@ -2,6 +2,7 @@ var exec = require('child_process').exec;
 var events = require('events');
 var util = require("util");
 var async = require("async");
+var xtend = require("xtend");
 
 /**
  * Parses stdout from the git log command issued below and turns it into a more manageable js object
@@ -36,9 +37,8 @@ util.inherits(UpstreamChecker, events.EventEmitter);
  * Emits the 'divergence' event if any divergence between local and upstream branch are found.
  * @param cb callback to invoke when check is done
  */
+
 UpstreamChecker.prototype.check = function(cb) {
-  console.log();
-  console.log("Checking "+this.path);
   var _this = this;
   var execWithCwd = function(cmd, cb) {
     return exec(cmd, {cwd: _this.path}, cb);
@@ -51,22 +51,21 @@ UpstreamChecker.prototype.check = function(cb) {
       if (!remote) console.warn("\t? \033[31mDon't know which upstream branch to fetch in "+_this.path+"\033[0m");
       return cb(null, null);
     }
-    console.log("\t· Fetching origin in "+_this.path+", please hang on...");
+    var event = {branch: local, remote: remote, path: _this.path};
+    _this.emit('fetch', event);
     exec('git fetch origin', {cwd: _this.path, timeout: 1000*60*5}, function() {
-      console.log("\t· Checking "+local+" against "+remote+" in "+_this.path);
+      _this.emit('check', event);
       execWithCwd("git log --pretty=format:'%H;%an;%cr;%s' --numstat "+local+"..."+remote, function() {
         var stdout = arguments[1] && arguments[1].trim();
-        var data = stdout ? {branch: local, remote: remote, commits: parseLogLines(stdout) } : null;
+        var commits = stdout ? parseLogLines(stdout) : [];
         // todo: check stderr and emit "error" / cb(err, null)
-        if (data) {
-          console.log("\t! \033[34mDivergence of "+data.commits.length+" commit(s) between "+local+" and "+remote+"\033[0m");
-          _this.emit("divergence", data);
+        if (commits.length) {
+          _this.emit("divergence", xtend(event, {commits: commits}));
         }
         else {
-          console.log("\t✓ \033[32mLocal branch "+local+" is up to date with upstream branch "+remote+"\033[0m");
-          _this.emit("inSync", data);
+          _this.emit("inSync", event);
         }
-        if (cb) cb(null, data);
+        if (cb) cb(null, event);
       });
     });
   });
