@@ -3,7 +3,7 @@
 var program = require('commander');
 var fs = require('fs');
 var RemoteChecker = require('../checker');
-var growl = require('growl');
+var notifier = require('node-notifier');
 var async = require('async');
 var path = require('path');
 
@@ -79,7 +79,12 @@ function createCheckers() {
         var now = new Date().getTime();
         if (!prev.time || (now - prev.time)/1000 > program.notifyinterval || prev.hash != latest.hash || program.always) {
           var body = "Branches has diverged with "+data.commits.length+" commits. Latest was " + latest.timeSince + ' by ' + latest.author + ": " + latest.subject;
-          growl(body, {title: name + " out of sync with "+data.remote, image: notificationImage});
+          notifier.notify({
+            title: name + " out of sync with "+data.remote,
+            message: body,
+            icon: notificationImage
+          });
+
           if (program.cmd) {
             var exec = require('child_process').exec;
             exec(program.command, {cwd: realpath}, function(err, stdout, stderr) {

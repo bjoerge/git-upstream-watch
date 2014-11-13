@@ -7,6 +7,7 @@
     "async": "latest",
     "commander": "latest",
     "growl": "latest",
+    "node-notifier": "^4.0.2",
     "repeat": "latest",
     "xtend": "^4.0.0"
   },
