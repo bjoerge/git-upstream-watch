@@ -62,7 +62,7 @@ UpstreamChecker.prototype.check = function(cb) {
         var isError = !!arguments[0];
         if (isError) {
           _this.emit("error", null);
-          return cb(null, null);
+          return cb(arguments[0], null);
         }
         if (commits.length) {
           _this.emit("divergence", xtend(event, {commits: commits}));
