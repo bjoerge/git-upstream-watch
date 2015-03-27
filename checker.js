@@ -49,6 +49,7 @@ UpstreamChecker.prototype.check = function(cb) {
     if (!(local && remote)) {
       if (!local) console.warn("\t? \033[31mDon't know which local branch to use in "+_this.path+"\033[0m");
       if (!remote) console.warn("\t? \033[31mDon't know which upstream branch to fetch in "+_this.path+"\033[0m");
+      _this.emit("error", null);
       return cb(null, null);
     }
     var event = {branch: local, remote: remote, path: _this.path};
@@ -58,7 +59,11 @@ UpstreamChecker.prototype.check = function(cb) {
       execWithCwd("git log --pretty=format:'%H;%an;%cr;%s' --numstat "+local+"..."+remote, function() {
         var stdout = arguments[1] && arguments[1].trim();
         var commits = stdout ? parseLogLines(stdout) : [];
-        // todo: check stderr and emit "error" / cb(err, null)
+        var isError = !!arguments[0];
+        if (isError) {
+          _this.emit("error", null);
+          return cb(arguments[0], null);
+        }
         if (commits.length) {
           _this.emit("divergence", xtend(event, {commits: commits}));
         }
