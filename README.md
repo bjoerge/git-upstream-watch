@@ -44,7 +44,7 @@ This will shedule a new upstream check every ten minutes, notifying about change
 
 ## Manually check
 ```js
-var createChecker = require("git-upstream-watch/check");
+var check = require("git-upstream-watch/check");
 
 // Check current directory
 
