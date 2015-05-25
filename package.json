@@ -2,13 +2,12 @@
   "name": "git-upstream-watch",
   "version": "0.0.10",
   "description": "Get notified when one or more local git repos diverge from the upstream tracking branch",
-  "main": "checker.js",
+  "main": "index.js",
   "dependencies": {
-    "async": "latest",
-    "commander": "latest",
-    "node-notifier": "^4.0.2",
-    "repeat": "latest",
-    "xtend": "^4.0.0"
+    "commander": "^2.8.1",
+    "debug": "^2.2.0",
+    "defaults": "^1.0.2",
+    "node-notifier": "^4.0.2"
   },
   "bin": {
     "git-upstream-watch": "./bin/git-upstream-watch"

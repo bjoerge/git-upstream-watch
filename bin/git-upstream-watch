@@ -2,127 +2,43 @@
 
 var program = require('commander');
 var fs = require('fs');
-var RemoteChecker = require('../checker');
-var notifier = require('node-notifier');
-var async = require('async');
+var upstreamWatch = require('../');
 var path = require('path');
-
-var notificationImage = path.resolve(__dirname, '..', 'git-icon.png');
+var debug = require('debug')('git-upstream-watch');
 
 program
-    .version(require("../package").version)
-    .option('-a, --always', 'Always notify about pending changes')
-    .option('-w, --watch', 'Keep checking upstream branch at regular intervals')
-    .option('-n, --notifyinterval [interval]', "Don't notify about each repo more often than every n seconds", 60*20)
-    .option('-i, --interval [interval]', 'Recheck for changes in upstream branch every n seconds', 120)
-    .option('-s, --silent', 'Never log anything', true)
-    .option('-c, --cmd [cmd]', 'Command to execute in repo dir when divergence is found. I.e. "git pull"')
-    .parse(process.argv);
+  .version(require("../package").version)
+  .arguments('[directories...]')
+  .option('-a, --always', 'Always notify about pending changes.')
+  .option('-i, --check-interval [interval]', 'Recheck for changes in upstream branch every n seconds. If this option is given, the process will run forever', Number, 0)
+  .option('-n, --notify-interval [interval]', "Don't notify about each repo more often than every n seconds. This option will only have an effect when --check-interval is specified", Number, 60 * 20)
+  .parse(process.argv);
 
-var log = program.silent !== true ? function noop() {} : function log() {
-  console.log.apply(console, arguments);
-};
-
-/**
- * Recursively find directories where the iterator function returns true
- * @param dir
- * @param iterator function
- * @return {Array}
- */
-function findDirs(dir, iterator) {
-  if (iterator(dir)) return [dir];
-  return fs.readdirSync(dir).reduce(function(found, file) {
-    var realpath = path.join(dir, file);
-    return file.substring(0,1) != "." && fs.existsSync(realpath) && fs.statSync(realpath).isDirectory() ?
-        found.concat(findDirs(realpath, iterator)) :
-        found;
-  }, []);
-}
-
-var isGitRepo = function(dir) {
+function isGitRepo(dir) {
   return fs.existsSync(path.join(dir, ".git"));
-};
-
-function createCheckers() {
-  // Recursively find all repo directories below the given arguments
-  var repoDirs = program.args.reduce(function (repoDirs, dir) {
-    if (!fs.statSync(dir).isDirectory()) return repoDirs;
-    return repoDirs.concat(findDirs(dir, isGitRepo));
-  }, []);
-
-  return repoDirs.map(function(dir) {
-    var realpath = path.resolve(dir);
-    var checker = new RemoteChecker(realpath);
-
-    var name = path.basename(realpath);
-
-    checker.on("fetch", function (data) {
-      log("\t· Fetching origin in "+data.path+", please hang on...");
-    });
-
-    checker.on("check", function (data) {
-      log("\t· Checking local "+data.branch+" against "+data.remote+" in "+data.path);
-    });
-
-    checker.on("inSync", function (data) {
-      log("\t✓ \033[32mLocal branch "+data.branch+" is up to date with upstream branch "+data.remote+"\033[0m");
-    });
-
-    checker.on("divergence", function (data) {
-      log("\t! \033[33mLocal branch "+data.branch+" is out of sync with upstream branch "+data.remote+"\033[0m");
-    });
-
-    checker.on("divergence", (function () {
-      var prev = {};
-      return function (data) {
-        var latest = data.commits[0];
-        var now = new Date().getTime();
-        if (!prev.time || (now - prev.time)/1000 > program.notifyinterval || prev.hash != latest.hash || program.always) {
-          var body = "Branches has diverged with "+data.commits.length+" commits. Latest was " + latest.timeSince + ' by ' + latest.author + ": " + latest.subject;
-          notifier.notify({
-            title: name + " out of sync with "+data.remote,
-            message: body,
-            icon: notificationImage
-          });
-
-          if (program.cmd) {
-            var exec = require('child_process').exec;
-            exec(program.command, {cwd: realpath}, function(err, stdout, stderr) {
-              log();
-              log("Result of executing "+program.cmd+" in "+realpath+": ");
-              log("\033[33m"+stdout+"\033[31m"+stderr+"\033[0m");
-            });
-          }
-          prev.time = now;
-        }
-        prev.hash = latest.hash;
-      }
-    }()));
-    return checker;
-  });
 }
 
-var checkers = createCheckers();
-
-// Poll all repos in sequence
-var checkAll = function (done) {
-  async.forEachSeries(checkers, function (checker, cb) {
-    checker.check(cb);
-  }, function () {
-    log();
-    log("\033[32mResting for " + program.interval + " seconds...\033[0m");
-    log();
-    done();
-  });
-};
-
-if (program.watch) {
-  var Repeat = require('repeat');
-  Repeat(checkAll).every(program.interval, 's').now();
+function validateGitRepoDir(dir) {
+  if (!isGitRepo(dir)) {
+    console.log();
+    console.error("Error: '"+dir+"' is not a git repository");
+    process.exit(1);
+  }
+  return dir;
 }
-else {
-  checkAll(function () {
-    log("Goodbye");
-    process.exit();
-  })
-}
+
+// Recursively find all repo directories below the dirs given by the args list
+var repoDirs = program.args.map(validateGitRepoDir)
+
+repoDirs.map(function (dir) {
+  var opts = {
+    always: program.always,
+    notifyInterval: program.notifyInterval,
+    checkInterval: program.checkInterval,
+    cwd: path.resolve(dir)
+  };
+
+  debug("Initializing watcher on %s, with options %o", dir, opts);
+
+  upstreamWatch(opts);
+});
