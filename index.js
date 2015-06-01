@@ -50,8 +50,8 @@ function createNotification(status) {
 var DEFAULT_OPTIONS = {
   cwd: process.cwd,
   always: false,
-  checkInterval: 0,
-  notifyInterval: 30
+  checkInterval: 60*5, // seconds
+  notifyInterval: 0    // seconds
 };
 
 module.exports = function upstreamWatch(opts) {
